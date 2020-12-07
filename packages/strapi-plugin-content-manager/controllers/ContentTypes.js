@@ -23,6 +23,9 @@ module.exports = {
       .filter(uid => {
         if (uid.startsWith('strapi::')) return false;
 
+        // Don't show models with "hidden" option 
+        if (_.get(strapi.contentTypes[uid], 'options.hidden', false)) return false;
+
         return !(kind && _.get(strapi.contentTypes[uid], 'kind', 'collectionType') !== kind);
       })
       .map(uid => {
