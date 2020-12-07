@@ -50,7 +50,9 @@ const Banner = forwardRef(
 
           <FormattedMessage id={`${pluginId}.containers.Edit.pluginHeader.title.new`}>
             {msg => {
-              return <div style={{ display }}>{displayedValue || msg}</div>;
+              // If the attribute value is `""`, `false` or `0` these are 
+              // valid values that should be displayed
+              return <div style={{ display }}>{displayedValue ?? msg}</div>;
             }}
           </FormattedMessage>
           <div className="cta-wrapper" style={{ display }}>
