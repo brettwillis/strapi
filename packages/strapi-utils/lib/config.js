@@ -33,7 +33,9 @@ const getConfigUrls = (serverConfig, forAdminBuild = false) => {
       throw new Error('Invalid admin url config. Make sure the url defined in server.js is valid.');
     }
   } else {
-    adminUrl = `${serverUrl}/${adminUrl}`;
+    // For Firebase hosting, we want the API available at `/_api`
+    // yet the panel served at `/`
+    adminUrl = '/' + adminUrl;
   }
 
   // Defines adminPath value
