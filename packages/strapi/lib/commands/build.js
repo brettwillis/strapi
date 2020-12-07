@@ -34,6 +34,7 @@ module.exports = async ({ clean, optimization }) => {
       options: {
         backend: serverUrl,
         publicPath: addSlash(adminPath),
+        title: config.get('server.admin.title', null),
       },
     })
     .then(() => {
