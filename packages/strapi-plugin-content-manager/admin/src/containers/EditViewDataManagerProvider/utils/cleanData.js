@@ -1,4 +1,4 @@
-import { get, isArray, isObject } from 'lodash';
+import { get, isArray, isObject, isPlainObject } from 'lodash';
 
 /* eslint-disable indent */
 
@@ -8,13 +8,19 @@ const cleanData = (retrievedData, currentSchema, componentsSchema) => {
   const getOtherInfos = (schema, arr) =>
     get(schema, ['attributes', ...arr], '');
 
-  const recursiveCleanData = (data, schema) => {
+  const recursiveCleanData = (data, schema, parentPath) => {
     return Object.keys(data).reduce((acc, current) => {
-      const attrType = getType(schema.schema, current);
+      const fullPath = parentPath ? parentPath + '.' + current : current;
+      const attrType = getType(schema.schema, fullPath);
       const value = get(data, current);
-      const component = getOtherInfos(schema.schema, [current, 'component']);
+      if (!attrType && isPlainObject(value)) {
+        acc[current] = recursiveCleanData(value, schema, fullPath);
+        return acc;
+      }
+
+      const component = getOtherInfos(schema.schema, [fullPath, 'component']);
       const isRepeatable = getOtherInfos(schema.schema, [
-        current,
+        fullPath,
         'repeatable',
       ]);
       let cleanedData;
@@ -36,7 +42,7 @@ const cleanData = (retrievedData, currentSchema, componentsSchema) => {
               : value;
           break;
         case 'media':
-          if (getOtherInfos(schema.schema, [current, 'multiple']) === true) {
+          if (getOtherInfos(schema.schema, [fullPath, 'multiple']) === true) {
             cleanedData = value
               ? helperCleanData(
                   value.filter(file => !(file instanceof File)),

@@ -64,7 +64,7 @@ const Header = ({
     ? formatMessage({
         id: getTrad('containers.Edit.pluginHeader.title.new'),
       })
-    : templateObject({ mainField: currentContentTypeMainField }, initialData).mainField;
+    : get(initialData, currentContentTypeMainField);
   /* eslint-enable indent */
 
   const headerTitle = useMemo(() => {

@@ -8,6 +8,7 @@ import {
   isEmpty,
   isNaN,
   toNumber,
+  uniq,
 } from 'lodash';
 import moment from 'moment';
 import * as yup from 'yup';
@@ -59,14 +60,49 @@ const getAttributes = data => get(data, ['schema', 'attributes'], {});
 
 const createYupSchema = (
   model,
-  { components },
+  { components, parentPath },
   options = { isCreatingEntry: true, isDraft: true, isFromComponent: false }
 ) => {
   const attributes = getAttributes(model);
 
+  // Handle multi-level objects with dot paths
+  // Collect all paths without dots and the top-level
+  // of any objects with paths
+  const topLevelAttrKeys = uniq(
+    Object
+      .keys(attributes)
+      .map(key => {
+        if (parentPath) {
+          if (key.startsWith(parentPath)) {
+            key = key.slice(parentPath.length + 1);
+          } else {
+            return null;
+          }
+        }
+
+        const dotIndex = key.indexOf('.');
+        if (dotIndex !== -1) {
+          return key.slice(0, dotIndex);
+        } else {
+          return key;
+        }
+      })
+      .filter(Boolean)
+  );
+
+
   return yup.object().shape(
-    Object.keys(attributes).reduce((acc, current) => {
-      const attribute = attributes[current];
+    topLevelAttrKeys.reduce((acc, current) => {
+      const fullPath = parentPath ? parentPath + '.' + current : current;
+      const attribute = attributes[fullPath];
+
+      if (!attribute) {
+        // If there is no attribute
+        // It means that this is an intermediate-level object
+        // From a attribute with a dot-path
+        acc[current] = createYupSchema(model, { components, parentPath: fullPath }, isCreatingEntry);
+        return acc;
+      }
 
       if (
         attribute.type !== 'relation' &&

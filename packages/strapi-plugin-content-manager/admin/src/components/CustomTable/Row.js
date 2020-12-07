@@ -73,7 +73,7 @@ function Row({ canDelete, canUpdate, isBulkable, row, headers }) {
     name => {
       const type = get(schema, ['attributes', name, 'type'], 'string');
 
-      return getDisplayedValue(type, row[name], name);
+      return getDisplayedValue(type, get(row, name), name);
     },
     [row, schema]
   );

@@ -161,16 +161,32 @@ const createAttributeValidator = createOrUpdate => (attr, data, { isDraft }) => 
   return validator;
 };
 
-const createModelValidator = createOrUpdate => (model, data, { isDraft }) => {
+const createModelValidator = createOrUpdate => (model, data, { isDraft }, parentPath) => {
   const nonWritableAttributes = model ? contentTypesUtils.getNonWritableAttributes(model) : [];
 
   return yup.object().shape(
     _.flow(
       fp.getOr({}, 'attributes'),
-      pickByWithKey((attr, attrName) => !nonWritableAttributes.includes(attrName)),
-      mapValuesWithKey((attr, attrName) =>
-        createAttributeValidator(createOrUpdate)(attr, _.get(data, attrName), { isDraft })
-      )
+      pickByWithKey((attr, attrName) => !nonWritableAttributes.includes(attrName) && (!parentPath || attrName.startsWith(parentPath))),
+      mapValuesWithKey((attr, attrName) => {
+
+        // TODO:
+        // This implementation of validating deep objects has not really been tested
+        // I can't seem to replicate a situation where this is actually invoked with a deep object
+        if (parentPath) {
+          if (attrName.startsWith(parentPath)) {
+            attrName = attrName.slice(parentPath.length + 1);
+          }
+        }
+        
+        if (attrName.includes('.')) {
+          return createModelValidator(createOrUpdate)(attr, _.get(data, attrName), { isDraft }, parentPath ? parentPath + '.' + attrName : attrName);
+          //return attrName.slice(0, dotIndex);
+        } else {
+          return createAttributeValidator(createOrUpdate)(attr, _.get(data, attrName), { isDraft });
+          //return attrName;
+        }
+      })
     )(model)
   );
 };
